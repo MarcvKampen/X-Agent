@@ -13,14 +13,22 @@ logging.basicConfig(
 )
 
 # --- Configuration ---
-NEWS_API_KEY = "39fa1c943e6f40cf98ec4d034099e3a8"  # User provided API key
+NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
 # --- End Configuration ---
 
 
 class NewsFetcher:
-    def __init__(self, api_key):
+    def __init__(self, api_key=None):  # Made api_key optional
+        # Prioritize passed api_key, then environment variable
+        effective_api_key = api_key if api_key is not None else NEWS_API_KEY
+        if not effective_api_key:
+            self.newsapi = None
+            logging.error(
+                "News API key not provided via argument or NEWS_API_KEY environment variable. NewsFetcher will not work."
+            )
+            return
         try:
-            self.newsapi = NewsApiClient(api_key=api_key)
+            self.newsapi = NewsApiClient(api_key=effective_api_key)
             logging.info("NewsApiClient initialized successfully.")
         except Exception as e:
             self.newsapi = None
@@ -115,10 +123,17 @@ class NewsFetcher:
 
 if __name__ == "__main__":
     logging.info("--- Interactive News Fetcher ---")
-    fetcher = NewsFetcher(api_key=NEWS_API_KEY)
+    # Initialize NewsFetcher. It will try to use NEWS_API_KEY from env if no arg is passed.
+    fetcher = NewsFetcher()
 
-    if not fetcher.newsapi:
-        logging.info("News fetcher could not be initialized. Exiting.")
+    if not NEWS_API_KEY:
+        logging.error(
+            "NEWS_API_KEY environment variable not set. Please set it to your News API key to run this script."
+        )
+    elif not fetcher.newsapi:  # Check if initialization failed for other reasons
+        logging.error(
+            "News fetcher could not be initialized. This might be due to an invalid API key or network issues. Exiting."
+        )
     else:
         # Define a list of categories for the user to choose from
         categories = [

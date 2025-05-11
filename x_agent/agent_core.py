@@ -22,12 +22,18 @@ DB_DIRECTORY = "chroma_db"
 COLLECTION_NAME = "tweets"
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"  # Consistent model for populating & querying
 OLLAMA_MODEL_NAME = "qwen3:1.7b"
-NEWS_API_KEY = "39fa1c943e6f40cf98ec4d034099e3a8"
+NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
 # --- End Configuration ---
 
 
 class TweetGeneratorAgent:
     def __init__(self):
+        if not NEWS_API_KEY:
+            logging.error(
+                "NEWS_API_KEY environment variable not set. Please set it to your News API key."
+            )
+            # You might want to raise an exception here or handle it more gracefully
+            # For now, we'll allow initialization but NewsFetcher will likely fail.
         self.news_fetcher = NewsFetcher(api_key=NEWS_API_KEY)
         self.embedding_model = None
         self.chroma_collection = None
